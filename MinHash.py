@@ -154,19 +154,18 @@ def taskOne(urllist, hashTable):
 
         averages[url] = total/len(retrieved_urls)
     end = time.time()
-    print("time taken on task one: " + str(end - begin))
 
     overall_unfiltered_avg = sum(averages.values())/len(averages.values())
-    print("overall unfiltered average: " + str(overall_unfiltered_avg))
-    print(averages)
+    return end - begin, overall_unfiltered_avg, averages
     
 
-taskOne(urllist, hashTable)
+time_taken, overall_unfiltered_avg, averages = taskOne(urllist, hashTable)
 
 def taskTwo(urllist, hashTable):
     begin = time.time()
     query_list = random.sample(urllist, 200)
     pairwise_sim = {}
+    query_time_list = []
     for i in range(len(urllist)):
         temp_begin = time.time()
         url = urllist[i]
@@ -177,6 +176,43 @@ def taskTwo(urllist, hashTable):
                 temp_sim[urllist[j]] = jaccard_similarity(genNGrams(url, 3), genNGrams(rurl, 3))
         pairwise_sim[url] = temp_sim
         temp_end = time.time()
-        print("Query time: " + str(temp_begin - temp_end))
+        query_time_list.append(temp_end - temp_begin)
     end = time.time()
-    print("total time: " + str(end - begin))
+    return end - begin, query_time_list
+
+two_time_taken, query_times = taskTwo(urllist, hashTable)
+
+def taskThree():
+    data = pd.read_csv("aol.txt", sep="\t")
+    urllist = data.ClickURL.dropna().unique().tolist()
+
+    unfiltered_averages = []
+    query_time = []
+    for k_val in [2,3,4,5,6]:
+        for l_val in [20, 50, 100]:
+            insertion_start = time.time()
+            hashTable = HashTable(k_val, l_val, 64, 2**20)
+
+            for i in range(len(urllist)):
+                insert(urllist[i], hashTable)
+
+            insertion_end = time.time()
+
+            begin = time.time()
+            query_list = random.sample(urllist, 200)
+            averages = {}
+            for url in query_list:
+                total = 0
+                retrieved_urls = query(url, hashTable)
+
+                for rurl in retrieved_urls:
+                    similarity = jaccard_similarity(genNGrams(url, 3), genNGrams(rurl, 3))
+                    total += similarity
+
+                averages[url] = total/len(retrieved_urls)
+            end = time.time()
+
+            overall_unfiltered_avg = sum(averages.values())/len(averages.values())
+            unfiltered_averages.append(overall_unfiltered_avg)
+            query_time.append(end - begin)
+    return query_time, unfiltered_averages
