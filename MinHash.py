@@ -3,6 +3,8 @@ import csv
 import pandas as pd
 import random
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 
 def genNGrams(string, n):
     #case where n is greater than length of string
@@ -127,92 +129,129 @@ def query(url, hashTable):
     
     return hashTable.lookup(hashcodes)
 
-data = pd.read_csv("aol.txt", sep="\t")
-urllist = data.ClickURL.dropna().unique().tolist()
+def taskFour():
+    # Define the Jaccard similarity values (Jx) ranging from 0 to 1
+    Jx_values = np.linspace(0, 1, 100)
 
-insertion_start = time.time()
-hashTable = HashTable(2, 50, 64, 2**20)
+    # Plot 1: Fix L = 50, vary K = {1, 2, 3, 4, 5, 6, 7}
+    L = 50
+    K_values = [1, 2, 3, 4, 5, 6, 7]
 
-for i in range(len(urllist)):
-    insert(urllist[i], hashTable)
+    plt.figure(figsize=(10, 6))
+    for K in K_values:
+        Px_values = 1 - (1 - Jx_values ** K) ** L
+        plt.plot(Jx_values, Px_values, label=f'K={K}')
 
-insertion_end = time.time()
+    plt.xlabel('Jaccard Similarity (Jx)')
+    plt.ylabel('Px')
+    plt.title('S-curves for Different K values (L=50)')
+    plt.legend()
+    plt.grid()
+    plt.show()
 
-print("Time taken to insert: " + str(insertion_start - insertion_end))
+    # Plot 2: Fix K = 4, vary L = {5, 10, 20, 50, 100, 150, 200}
+    K = 4
+    L_values = [5, 10, 20, 50, 100, 150, 200]
 
-def taskOne(urllist, hashTable):
-    begin = time.time()
-    query_list = random.sample(urllist, 200)
-    averages = {}
-    for url in query_list:
-        total = 0
-        retrieved_urls = query(url, hashTable)
+    plt.figure(figsize=(10, 6))
+    for L in L_values:
+        Px_values = 1 - (1 - Jx_values ** K) ** L
+        plt.plot(Jx_values, Px_values, label=f'L={L}')
 
-        for rurl in retrieved_urls:
-            similarity = jaccard_similarity(genNGrams(url, 3), genNGrams(rurl, 3))
-            total += similarity
+    plt.xlabel('Jaccard Similarity (Jx)')
+    plt.ylabel('Px')
+    plt.title('S-curves for Different L values (K=4)')
+    plt.legend()
+    plt.grid()
+    plt.show()
 
-        averages[url] = total/len(retrieved_urls)
-    end = time.time()
+taskFour()
+# data = pd.read_csv("aol.txt", sep="\t")
+# urllist = data.ClickURL.dropna().unique().tolist()
 
-    overall_unfiltered_avg = sum(averages.values())/len(averages.values())
-    return end - begin, overall_unfiltered_avg, averages
+# insertion_start = time.time()
+# hashTable = HashTable(2, 50, 64, 2**20)
+
+# for i in range(len(urllist)):
+#     insert(urllist[i], hashTable)
+
+# insertion_end = time.time()
+
+# print("Time taken to insert: " + str(insertion_start - insertion_end))
+
+# def taskOne(urllist, hashTable):
+#     begin = time.time()
+#     query_list = random.sample(urllist, 200)
+#     averages = {}
+#     for url in query_list:
+#         total = 0
+#         retrieved_urls = query(url, hashTable)
+
+#         for rurl in retrieved_urls:
+#             similarity = jaccard_similarity(genNGrams(url, 3), genNGrams(rurl, 3))
+#             total += similarity
+
+#         averages[url] = total/len(retrieved_urls)
+#     end = time.time()
+
+#     overall_unfiltered_avg = sum(averages.values())/len(averages.values())
+#     return end - begin, overall_unfiltered_avg, averages
     
 
-time_taken, overall_unfiltered_avg, averages = taskOne(urllist, hashTable)
+# time_taken, overall_unfiltered_avg, averages = taskOne(urllist, hashTable)
 
-def taskTwo(urllist, hashTable):
-    begin = time.time()
-    query_list = random.sample(urllist, 200)
-    pairwise_sim = {}
-    query_time_list = []
-    for i in range(len(urllist)):
-        temp_begin = time.time()
-        url = urllist[i]
-        temp_sim = {}
-        for j in range(len(urllist)):
-            if j != i:
-                rurl = urllist[j]
-                temp_sim[urllist[j]] = jaccard_similarity(genNGrams(url, 3), genNGrams(rurl, 3))
-        pairwise_sim[url] = temp_sim
-        temp_end = time.time()
-        query_time_list.append(temp_end - temp_begin)
-    end = time.time()
-    return end - begin, query_time_list
+# def taskTwo(urllist, hashTable):
+#     begin = time.time()
+#     query_list = random.sample(urllist, 200)
+#     pairwise_sim = {}
+#     query_time_list = []
+#     for i in range(len(urllist)):
+#         temp_begin = time.time()
+#         url = urllist[i]
+#         temp_sim = {}
+#         for j in range(len(urllist)):
+#             if j != i:
+#                 rurl = urllist[j]
+#                 temp_sim[urllist[j]] = jaccard_similarity(genNGrams(url, 3), genNGrams(rurl, 3))
+#         pairwise_sim[url] = temp_sim
+#         temp_end = time.time()
+#         query_time_list.append(temp_end - temp_begin)
+#     end = time.time()
+#     return end - begin, query_time_list
 
-two_time_taken, query_times = taskTwo(urllist, hashTable)
+# two_time_taken, query_times = taskTwo(urllist, hashTable)
 
-def taskThree():
-    data = pd.read_csv("aol.txt", sep="\t")
-    urllist = data.ClickURL.dropna().unique().tolist()
+# def taskThree():
+#     data = pd.read_csv("aol.txt", sep="\t")
+#     urllist = data.ClickURL.dropna().unique().tolist()
 
-    unfiltered_averages = []
-    query_time = []
-    for k_val in [2,3,4,5,6]:
-        for l_val in [20, 50, 100]:
-            insertion_start = time.time()
-            hashTable = HashTable(k_val, l_val, 64, 2**20)
+#     unfiltered_averages = []
+#     query_time = []
+#     for k_val in [2,3,4,5,6]:
+#         for l_val in [20, 50, 100]:
+#             insertion_start = time.time()
+#             hashTable = HashTable(k_val, l_val, 64, 2**20)
 
-            for i in range(len(urllist)):
-                insert(urllist[i], hashTable)
+#             for i in range(len(urllist)):
+#                 insert(urllist[i], hashTable)
 
-            insertion_end = time.time()
+#             insertion_end = time.time()
 
-            begin = time.time()
-            query_list = random.sample(urllist, 200)
-            averages = {}
-            for url in query_list:
-                total = 0
-                retrieved_urls = query(url, hashTable)
+#             begin = time.time()
+#             query_list = random.sample(urllist, 200)
+#             averages = {}
+#             for url in query_list:
+#                 total = 0
+#                 retrieved_urls = query(url, hashTable)
 
-                for rurl in retrieved_urls:
-                    similarity = jaccard_similarity(genNGrams(url, 3), genNGrams(rurl, 3))
-                    total += similarity
+#                 for rurl in retrieved_urls:
+#                     similarity = jaccard_similarity(genNGrams(url, 3), genNGrams(rurl, 3))
+#                     total += similarity
 
-                averages[url] = total/len(retrieved_urls)
-            end = time.time()
+#                 averages[url] = total/len(retrieved_urls)
+#             end = time.time()
 
-            overall_unfiltered_avg = sum(averages.values())/len(averages.values())
-            unfiltered_averages.append(overall_unfiltered_avg)
-            query_time.append(end - begin)
-    return query_time, unfiltered_averages
+#             overall_unfiltered_avg = sum(averages.values())/len(averages.values())
+#             unfiltered_averages.append(overall_unfiltered_avg)
+#             query_time.append(end - begin)
+#     return query_time, unfiltered_averages
